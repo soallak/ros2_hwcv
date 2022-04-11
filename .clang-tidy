@@ -1,0 +1,132 @@
+---
+Checks:          'clang-diagnostic-*,clang-analyzer-*,clang-analyzer-*,cppcoreguidelines-*,google-*'
+WarningsAsErrors: ''
+HeaderFilterRegex: ''
+AnalyzeTemporaryDtors: false
+FormatStyle:     Google
+User:            swallak
+CheckOptions:
+  - key:             modernize-replace-auto-ptr.IncludeStyle
+    value:           llvm
+  - key:             cppcoreguidelines-no-malloc.Reallocations
+    value:           '::realloc'
+  - key:             cppcoreguidelines-owning-memory.LegacyResourceConsumers
+    value:           '::free;::realloc;::freopen;::fclose'
+  - key:             cppcoreguidelines-avoid-magic-numbers.IgnoreAllFloatingPointValues
+    value:           'false'
+  - key:             cppcoreguidelines-special-member-functions.AllowMissingMoveFunctions
+    value:           'false'
+  - key:             cert-oop54-cpp.WarnOnlyIfThisHasSuspiciousField
+    value:           'false'
+  - key:             cert-dcl16-c.NewSuffixes
+    value:           'L;LL;LU;LLU'
+  - key:             cppcoreguidelines-macro-usage.CheckCapsOnly
+    value:           'false'
+  - key:             modernize-loop-convert.MaxCopySize
+    value:           '16'
+  - key:             google-build-namespaces.HeaderFileExtensions
+    value:           ';h;hh;hpp;hxx'
+  - key:             cppcoreguidelines-pro-bounds-constant-array-index.GslHeader
+    value:           ''
+  - key:             cppcoreguidelines-explicit-virtual-functions.IgnoreDestructors
+    value:           'true'
+  - key:             google-readability-function-size.BranchThreshold
+    value:           '4294967295'
+  - key:             cppcoreguidelines-narrowing-conversions.IgnoreConversionFromTypes
+    value:           ''
+  - key:             google-readability-function-size.NestingThreshold
+    value:           '4294967295'
+  - key:             cert-str34-c.DiagnoseSignedUnsignedCharComparisons
+    value:           'false'
+  - key:             cppcoreguidelines-explicit-virtual-functions.AllowOverrideAndFinal
+    value:           'false'
+  - key:             google-readability-braces-around-statements.ShortStatementLines
+    value:           '1'
+  - key:             google-readability-function-size.ParameterThreshold
+    value:           '4294967295'
+  - key:             cppcoreguidelines-pro-type-member-init.IgnoreArrays
+    value:           'false'
+  - key:             google-runtime-int.TypeSuffix
+    value:           ''
+  - key:             cppcoreguidelines-avoid-magic-numbers.IgnoredFloatingPointValues
+    value:           '1.0;100.0;'
+  - key:             cppcoreguidelines-macro-usage.IgnoreCommandLineMacros
+    value:           'true'
+  - key:             cppcoreguidelines-pro-bounds-constant-array-index.IncludeStyle
+    value:           llvm
+  - key:             cppcoreguidelines-narrowing-conversions.WarnWithinTemplateInstantiation
+    value:           'false'
+  - key:             cppcoreguidelines-owning-memory.LegacyResourceProducers
+    value:           '::malloc;::aligned_alloc;::realloc;::calloc;::fopen;::freopen;::tmpfile'
+  - key:             cppcoreguidelines-narrowing-conversions.WarnOnFloatingPointNarrowingConversion
+    value:           'true'
+  - key:             cppcoreguidelines-init-variables.IncludeStyle
+    value:           llvm
+  - key:             cppcoreguidelines-avoid-magic-numbers.IgnoredIntegerValues
+    value:           '1;2;3;4;'
+  - key:             cppcoreguidelines-non-private-member-variables-in-classes.IgnorePublicMemberVariables
+    value:           'false'
+  - key:             modernize-loop-convert.MinConfidence
+    value:           reasonable
+  - key:             cppcoreguidelines-avoid-magic-numbers.IgnorePowersOf2IntegerValues
+    value:           'false'
+  - key:             cppcoreguidelines-special-member-functions.AllowMissingMoveFunctionsWhenCopyIsDeleted
+    value:           'false'
+  - key:             google-readability-namespace-comments.ShortNamespaceLines
+    value:           '10'
+  - key:             google-readability-namespace-comments.SpacesBeforeComments
+    value:           '2'
+  - key:             cppcoreguidelines-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
+    value:           'true'
+  - key:             cppcoreguidelines-avoid-magic-numbers.IgnoreBitFieldsWidths
+    value:           'true'
+  - key:             cppcoreguidelines-no-malloc.Allocations
+    value:           '::malloc;::calloc'
+  - key:             cppcoreguidelines-narrowing-conversions.WarnOnIntegerNarrowingConversion
+    value:           'true'
+  - key:             cppcoreguidelines-narrowing-conversions.WarnOnEquivalentBitWidth
+    value:           'true'
+  - key:             cppcoreguidelines-prefer-member-initializer.UseAssignment
+    value:           'false'
+  - key:             google-readability-function-size.VariableThreshold
+    value:           '4294967295'
+  - key:             google-readability-function-size.LineThreshold
+    value:           '4294967295'
+  - key:             cppcoreguidelines-explicit-virtual-functions.FinalSpelling
+    value:           final
+  - key:             llvm-qualified-auto.AddConstToQualified
+    value:           'false'
+  - key:             modernize-loop-convert.NamingStyle
+    value:           CamelCase
+  - key:             cppcoreguidelines-pro-type-member-init.UseAssignment
+    value:           'false'
+  - key:             cppcoreguidelines-init-variables.MathHeader
+    value:           '<math.h>'
+  - key:             google-runtime-int.SignedTypePrefix
+    value:           int
+  - key:             google-readability-function-size.StatementThreshold
+    value:           '800'
+  - key:             llvm-else-after-return.WarnOnConditionVariables
+    value:           'false'
+  - key:             google-runtime-int.UnsignedTypePrefix
+    value:           uint
+  - key:             modernize-pass-by-value.IncludeStyle
+    value:           llvm
+  - key:             cppcoreguidelines-explicit-virtual-functions.OverrideSpelling
+    value:           override
+  - key:             cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
+    value:           'false'
+  - key:             google-global-names-in-headers.HeaderFileExtensions
+    value:           ';h;hh;hpp;hxx'
+  - key:             modernize-use-nullptr.NullMacros
+    value:           'NULL'
+  - key:             cppcoreguidelines-no-malloc.Deallocations
+    value:           '::free'
+  - key:             cppcoreguidelines-macro-usage.AllowedRegexp
+    value:           '^DEBUG_*'
+  - key:             cppcoreguidelines-narrowing-conversions.PedanticMode
+    value:           'false'
+  - key:             llvm-else-after-return.WarnOnUnfixable
+    value:           'false'
+...
+
