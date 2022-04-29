@@ -26,12 +26,22 @@ target_include_directories(
          $<INSTALL_INTERFACE:include>
   PRIVATE src/)
 
-target_link_libraries(
-  ${PROJECT_NAME}
-  PUBLIC opencv_core
-  PRIVATE ${PROJECT_NAME}_kernels_cvt_color ${PROJECT_NAME}_kernels_stereo
-          spdlog::spdlog OpenCL::OpenCL vitis_common::vitis_common)
-
+if(DEFINED ROS_ACCELERATION AND DEFINED ROS_VITIS)
+  find_library(xrt_coreutil xrt_coreutil)
+  find_library(xilinxopencl lxilinxopencl)
+  target_link_libraries(
+    ${PROJECT_NAME}
+    PUBLIC opencv_core
+    PRIVATE ${PROJECT_NAME}_kernels_cvt_color ${PROJECT_NAME}_kernels_stereo
+            spdlog::spdlog ${xrt_coreutil} ${xilinxopencl}
+            vitis_common::vitis_common)
+else()
+  target_link_libraries(
+    ${PROJECT_NAME}
+    PUBLIC opencv_core
+    PRIVATE ${PROJECT_NAME}_kernels_cvt_color ${PROJECT_NAME}_kernels_stereo
+            spdlog::spdlog OpenCL::OpenCL vitis_common::vitis_common)
+endif()
 install(DIRECTORY include/ DESTINATION include)
 
 install(

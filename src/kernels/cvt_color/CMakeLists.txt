@@ -14,47 +14,55 @@ set(XF_WIDTH 1024)
 set(XF_HEIGHT 768)
 set(XF_USE_URAM 1)
 
-configure_file(cmake/config.in generated/cvt_color_config.hpp @ONLY)
-
 if(DEFINED ROS_ACCELERATION AND DEFINED ROS_VITIS)
   set(CVT_COLOR_DEMOSAICING_NAME "demosaicing_accel")
   set(CVT_COLOR_BGR2GRAY_NAME "bgr2gray_accel")
-  set(CVT_COLOR_BINARY_FILE "cvt_color")
-  message(WARNING "Compiling for FPGA. This might take a while")
-  set(SOURCE_DIR src/kernels/cvt_color/)
-  vitis_acceleration_kernel(
-    NAME
-    ${CVT_COLOR_DEMOSAICING_NAME}
-    FILE
-    ${SOURCE_DIR}/src/demosaicing_accel.cpp
-    CONFIG
-    ${SOURCE_DIR}/cfg/kv260.cfg
-    INCLUDE
-    ${CMAKE_INSTALL_PREFIX}/include
-    ${CMAKE_CURRENT_BINARY_DIR}/generated
-    TYPE
-    hw)
-  vitis_acceleration_kernel(
-    NAME
-    ${CVT_COLOR_BGR2GRAY_NAME}
-    FILE
-    ${SOURCE_DIR}/src/bgr2gray_accel.cpp
-    CONFIG
-    ${SOURCE_DIR}/cfg/kv260.cfg
-    INCLUDE
-    ${CMAKE_INSTALL_PREFIX}/include
-    ${CMAKE_CURRENT_BINARY_DIR}/generated
-    TYPE
-    hw)
+  set(CVT_COLOR_BINARY_FILE
+      "/lib/firmware/xilinx/${PROJECT_NAME}/${PROJECT_NAME}.xclbin")
 
-  vitis_link_kernel(
-    OUTPUT
-    ${CVT_COLOR_BINARY_FILE}
-    KERNELS
-    ${CVT_COLOR_DEMOSAICING_NAME}
-    ${CVT_COLOR_BGR2GRAY_NAME}
-    CONFIG
-    ${SOURCE_DIR}/cfg/kv260.cfg)
+  configure_file(cmake/config.in generated/cvt_color_config.hpp @ONLY)
+
+  if(NOT NOKERNEL AND NOT NO_CVT_COLOR_KERNEL)
+
+    set(SOURCE_DIR src/kernels/cvt_color/)
+    message(WARNING "Compiling for FPGA. This might take a while")
+    vitis_acceleration_kernel(
+      NAME
+      ${CVT_COLOR_DEMOSAICING_NAME}
+      FILE
+      ${SOURCE_DIR}/src/demosaicing_accel.cpp
+      CONFIG
+      ${SOURCE_DIR}/cfg/kv260.cfg
+      INCLUDE
+      ${CMAKE_INSTALL_PREFIX}/include
+      ${CMAKE_CURRENT_BINARY_DIR}/generated
+      TYPE
+      hw)
+    vitis_acceleration_kernel(
+      NAME
+      ${CVT_COLOR_BGR2GRAY_NAME}
+      FILE
+      ${SOURCE_DIR}/src/bgr2gray_accel.cpp
+      CONFIG
+      ${SOURCE_DIR}/cfg/kv260.cfg
+      INCLUDE
+      ${CMAKE_INSTALL_PREFIX}/include
+      ${CMAKE_CURRENT_BINARY_DIR}/generated
+      TYPE
+      hw)
+
+    vitis_link_kernel(
+      OUTPUT
+      ${PROJECT_NAME}
+      KERNELS
+      ${CVT_COLOR_DEMOSAICING_NAME}
+      ${CVT_COLOR_BGR2GRAY_NAME}
+      CONFIG
+      ${SOURCE_DIR}/cfg/kv260.cfg)
+  endif()
+
+else()
+  configure_file(cmake/config.in generated/cvt_color_config.hpp @ONLY)
 
 endif()
 
