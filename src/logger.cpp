@@ -21,7 +21,12 @@ void CreateLogger() {
   std::vector<spdlog::sink_ptr> sinks{color_sink, syslog_sink};
   auto logger = std::make_shared<spdlog::logger>(logger_name_, sinks.begin(),
                                                  sinks.end());
+
+#if defined(NDEBUG)
+  logger->set_level(spdlog::level::info);
+#else
   logger->set_level(spdlog::level::debug);
+#endif
   spdlog::register_logger(logger);
 }
 

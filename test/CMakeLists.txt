@@ -14,6 +14,23 @@ target_link_libraries(
   test_stereo PRIVATE hwcv opencv_core opencv_highgui opencv_imgproc
                       Boost::filesystem spdlog::spdlog)
 
-install(TARGETS test_cvt_color test_stereo RUNTIME DESTINATION lib/hwcv)
+add_executable(test_feature test_feature.cpp)
+target_link_libraries(
+  test_feature
+  PRIVATE hwcv
+          opencv_core
+          opencv_highgui
+          opencv_imgproc
+          opencv_features2d
+          Boost::filesystem
+          spdlog::spdlog)
+
+add_executable(test_all test_all.cpp)
+target_link_libraries(
+  test_all PRIVATE hwcv opencv_core opencv_highgui opencv_imgproc
+                   Boost::filesystem spdlog::spdlog)
+
+install(TARGETS test_cvt_color test_stereo test_feature test_all
+        RUNTIME DESTINATION lib/hwcv)
 
 install(DIRECTORY data DESTINATION lib/hwcv/)

@@ -1,4 +1,4 @@
-project(hwcv_kernels_cvt_color)
+project(hwcv_kernels_feature)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -12,55 +12,45 @@ find_package(OpenCV REQUIRED COMPONENTS core)
 
 set(XF_WIDTH 1024)
 set(XF_HEIGHT 768)
-set(XF_USE_URAM 1)
+set(XF_FAST_NMS 1)
 
 if(DEFINED ROS_ACCELERATION AND DEFINED ROS_VITIS)
 
-  set(CVT_COLOR_DEMOSAICING_NAME "demosaicing_accel")
-  set(CVT_COLOR_BGR2GRAY_NAME "bgr2gray_accel")
-  set(CVT_COLOR_BINARY_FILE ${HWCV_KERNELS_BINARY_FILE})
+  set(FEATURE_FAST_NAME "fast_accel")
+  set(FEATURE_BINARY_FILE ${HWCV_KERNELS_BINARY_FILE})
 
-  configure_file(cmake/config.in generated/cvt_color_config.hpp @ONLY)
+  configure_file(cmake/feature_config.in generated/feature_config.hpp @ONLY)
 
-  if(NOT NOKERNEL AND NOT NO_CVT_COLOR_KERNEL)
+  if(NOT NOKERNEL AND NOT NO_FEATURE_KERNEL)
     message(WARNING "Compiling for FPGA. This might take a while")
 
-    set(SOURCE_DIR src/kernels/cvt_color/)
-    set(HWCV_KERNERLS_CVT_COLOR
-        ${CVT_COLOR_DEMOSAICING_NAME} ${CVT_COLOR_BGR2GRAY_NAME}
+    set(SOURCE_DIR src/kernels/feature/)
+    set(HWCV_KERNERLS_FEATURE
+        ${FEATURE_FAST_NAME}
         PARENT_SCOPE)
 
     vitis_acceleration_kernel(
       NAME
-      ${CVT_COLOR_DEMOSAICING_NAME}
+      ${FEATURE_FAST_NAME}
       FILE
-      ${SOURCE_DIR}/src/demosaicing_accel.cpp
+      ${SOURCE_DIR}/src/fast_accel.cpp
       CONFIG
       ${HWCV_KERNELS_CFG}
       INCLUDE
       ${CMAKE_INSTALL_PREFIX}/include
+      ${CMAKE_INSTALL_PREFIX}/include/vitis_common # TODO(soallak): use
+                                                   # vitis_common includes
+                                                   # property
       ${CMAKE_CURRENT_BINARY_DIR}/generated
       TYPE
       hw)
-    vitis_acceleration_kernel(
-      NAME
-      ${CVT_COLOR_BGR2GRAY_NAME}
-      FILE
-      ${SOURCE_DIR}/src/bgr2gray_accel.cpp
-      CONFIG
-      ${HWCV_KERNELS_CFG}
-      INCLUDE
-      ${CMAKE_INSTALL_PREFIX}/include
-      ${CMAKE_CURRENT_BINARY_DIR}/generated
-      TYPE
-      hw)
+
   endif()
 else()
-  configure_file(cmake/config.in generated/cvt_color_config.hpp @ONLY)
+  configure_file(cmake/feature_config.in generated/feature_config.hpp @ONLY)
 endif()
 
-add_library(${PROJECT_NAME} STATIC src/demosaicing_accel.cpp
-                                   src/bgr2gray_accel.cpp src/accel.cpp)
+add_library(${PROJECT_NAME} STATIC src/fast_accel.cpp src/accel.cpp)
 target_include_directories(
   ${PROJECT_NAME}
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

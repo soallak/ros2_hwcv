@@ -1,5 +1,6 @@
 #include "vitis_algorithm.hpp"
 
+#include <boost/filesystem.hpp>
 #include <vitis_common/common/utilities.hpp>
 #include <vitis_common/xcl2/xcl2.hpp>
 
@@ -11,9 +12,19 @@ namespace hwcv {
 
 VitisAlgorithm::VitisAlgorithm() : logger_(GetLogger()) {}
 
-VitisAlgorithm::~VitisAlgorithm() { queue_.finish(); }
+VitisAlgorithm::~VitisAlgorithm() {
+  queue_.finish();
+  // TODO(soallak): delete file buffer
+  // if (binary_file_buf_) delete[] binary_file_buf_;
+}
 
 void VitisAlgorithm::LoadBinaryFile() {
+  namespace fs = boost::filesystem;
+  if (!fs::is_regular_file(GetBinaryFile())) {
+    throw CLError(
+        fmt::format("Could not find appropriate binary {}", GetBinaryFile()));
+  }
+
   auto devices = xcl::get_xil_devices();
   if (devices.empty()) {
     throw CLError("No XIL devices were found");
@@ -34,16 +45,15 @@ void VitisAlgorithm::LoadBinaryFile() {
   logger_->debug(
       fmt::format(FMT_STRING("Import binary file {}"), GetBinaryFile()));
   unsigned int file_buf_size = 0;
-  // TODO(soallak): is there a mem leak of file_buf ?
-  char* file_buf = read_binary_file(GetBinaryFile(), file_buf_size);
-  cl::Program::Binaries binaries{{file_buf, file_buf_size}};
+  binary_file_buf_ = read_binary_file(GetBinaryFile(), file_buf_size);
+  cl::Program::Binaries binaries{{binary_file_buf_, file_buf_size}};
 
   logger_->debug(
       fmt::format(FMT_STRING("Create program for binary {}"), GetBinaryFile()));
   OCL_CALL(program_ = cl::Program(context_, devices, binaries, NULL, &err),
            err);
   is_binary_loaded_ = true;
-  logger_->debug("Finish program creating");
+  logger_->debug("Finish program creation");
 }
 
 }  // namespace hwcv

@@ -28,7 +28,7 @@ void TestStereo(fs::path left_path, fs::path right_path) {
   cv::imwrite("test_stereo.png", float_dst);
 }
 
-int main(int argc, char** argv) {
+int main(int /* argc */, char** argv) {
   fs::path prog_dir = fs::path(argv[0]).parent_path();
 
   auto left_path = fs::path(prog_dir).append("data/test_stereo_left.png");

@@ -35,7 +35,7 @@ void TestBGR2Gray(fs::path img_path) {
   cv::imwrite(write_img, dst);
 }
 
-int main(int argc, char** argv) {
+int main(int /* argc */, char** argv) {
   spdlog::set_level(spdlog::level::trace);
 
   fs::path raw_img_path = fs::path(std::string(argv[0]))

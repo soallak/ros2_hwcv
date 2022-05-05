@@ -54,31 +54,34 @@ class CvtColorImpl : public VitisAlgorithm, public ICvtColor {
       int width = src.cols;
 
       cl::Kernel kernel;
-      logger_->debug("Setup kernel arguments");
       if (code == cv::ColorConversionCodes::COLOR_BGR2GRAY) {
-        kernel = bgr2gray_kernel;
+        logger_->debug("Setup bgr2gray_kernel arguments");
+
+        kernel = bgr2gray_kernel_;
         SetKernelArg(kernel, 0, buffer_src, buffer_dst, height, width);
 
       } else {
+        logger_->debug("Setup demosaicing_kernel arguments");
         kernel = demosaicing_kernel_;
         auto pattern = ToXfPattern(code);
-        SetKernelArg(kernel, 0, buffer_src, buffer_dst, height, pattern);
+        SetKernelArg(kernel, 0, buffer_src, buffer_dst, height, width, pattern);
       }
       logger_->debug("Write input buffers");
       cl_int err = 0;
-      OCL_CALL(
-          err = queue_.enqueueWriteBuffer(buffer_src, CL_TRUE, 0,
-                                          GetBufferSizeForCvMat(src), src.data),
-          err);
+      cl::Event event;
+      OCL_CALL(err = queue_.enqueueWriteBuffer(buffer_src, CL_TRUE, 0,
+                                               GetBufferSizeForCvMat(src),
+                                               src.data, nullptr, &event),
+               err);
 
       logger_->debug("Execute stereo kernel");
       OCL_CALL(err = queue_.enqueueTask(kernel), err);
 
       logger_->debug("Read output buffers");
-      OCL_CALL(
-          err = queue_.enqueueReadBuffer(buffer_dst, CL_TRUE, 0,
-                                         GetBufferSizeForCvMat(dst), dst.data),
-          err);
+      OCL_CALL(err = queue_.enqueueReadBuffer(buffer_dst, CL_TRUE, 0,
+                                              GetBufferSizeForCvMat(dst),
+                                              dst.data, nullptr, &event),
+               err);
 
       logger_->debug("Finish up queue");
       OCL_CALL(err = queue_.finish(), err);
@@ -95,13 +98,11 @@ class CvtColorImpl : public VitisAlgorithm, public ICvtColor {
       // TODO(soallak) This is ugly. Better to use conversion functions
       switch (code) {
         case cv::ColorConversionCodes::COLOR_BayerBG2RGBA:
-          pattern = XF_BAYER_BG;
         case cv::ColorConversionCodes::COLOR_BayerGB2RGBA:
-          pattern = XF_BAYER_GB;
         case cv::ColorConversionCodes::COLOR_BayerGR2RGBA:
-          pattern = XF_BAYER_GR;
         case cv::ColorConversionCodes::COLOR_BayerRG2RGBA: {
           logger_->debug("Create xf matrices");
+          pattern = ToXfPattern(code);
           auto xf_src_mat =
               CvMat2XfMat<XF_8UC1, XF_HEIGHT, XF_WIDTH, XF_NPPC1>(src);
           xf::cv::Mat<XF_8UC4, XF_HEIGHT, XF_WIDTH, XF_NPPC1> xf_dst_mat(
@@ -236,7 +237,7 @@ class CvtColorImpl : public VitisAlgorithm, public ICvtColor {
     std::string kernel_name = hwcv::kernels::cvt_color::bgr2gray::GetName();
     cl_int err = 0;
     logger_->debug(fmt::format(FMT_STRING("Load kernel {}"), kernel_name));
-    OCL_CALL(bgr2gray_kernel = cl::Kernel(program_, kernel_name.c_str(), &err),
+    OCL_CALL(bgr2gray_kernel_ = cl::Kernel(program_, kernel_name.c_str(), &err),
              err);
   }
 
@@ -269,7 +270,7 @@ class CvtColorImpl : public VitisAlgorithm, public ICvtColor {
 
  private:
   cl::Kernel demosaicing_kernel_;
-  cl::Kernel bgr2gray_kernel;
+  cl::Kernel bgr2gray_kernel_;
 };
 
 CvtColor::CvtColor() : impl_(std::make_unique<CvtColorImpl>()) {}

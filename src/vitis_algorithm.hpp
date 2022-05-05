@@ -56,6 +56,7 @@ class VitisAlgorithm {
   cl::Context context_;
   cl::CommandQueue queue_;
   cl::Program program_;
+  char* binary_file_buf_{nullptr};
 };
 
 }  // namespace hwcv

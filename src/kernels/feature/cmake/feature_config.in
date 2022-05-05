@@ -1,0 +1,6 @@
+#cmakedefine XF_WIDTH @XF_WIDTH@
+#cmakedefine XF_HEIGHT @XF_HEIGHT@
+#cmakedefine XF_FAST_NMS @XF_FAST_NMS@
+
+#cmakedefine FEATURE_FAST_NAME "@FEATURE_FAST_NAME@"
+#cmakedefine FEATURE_BINARY_FILE "@FEATURE_BINARY_FILE@"

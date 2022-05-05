@@ -44,7 +44,6 @@ ap_uint<PTR_WIDTH>* CreateApUintData(xf::cv::Mat<TYPE, ROWS, COLS, NPPC>& mat) {
       (ROWS * COLS * pixel_width / PTR_WIDTH) +
       ((ROWS * COLS * pixel_width % PTR_WIDTH) ? 1 : 0);
 
-  using mat_type = xf::cv::Mat<TYPE, ROWS, COLS, NPPC>;
   ap_uint<PTR_WIDTH>* ptr = new ap_uint<PTR_WIDTH>[buffer_size];
 
   xf::cv::xfMat2Array<PTR_WIDTH, TYPE, ROWS, COLS, NPPC>(mat, ptr);
@@ -70,7 +69,6 @@ ap_uint<PTR_WIDTH>* CreateApUintData() {
       (ROWS * COLS * pixel_width / PTR_WIDTH) +
       ((ROWS * COLS * pixel_width % PTR_WIDTH) ? 1 : 0);
 
-  using mat_type = xf::cv::Mat<TYPE, ROWS, COLS, NPPC>;
   ap_uint<PTR_WIDTH>* ptr = new ap_uint<PTR_WIDTH>[buffer_size];
 
   return ptr;

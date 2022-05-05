@@ -15,10 +15,12 @@ find_package(OpenCV REQUIRED COMPONENTS core highgui imgproc)
 find_package(spdlog REQUIRED)
 find_package(OpenCL REQUIRED)
 find_package(vitis_common REQUIRED)
+find_package(Boost REQUIRED COMPONENTS filesystem)
 
 add_library(
-  ${PROJECT_NAME} STATIC src/vitis_algorithm.cpp src/cvt_color.cpp
-                         src/stereo.cpp src/logger.cpp src/cl_utils.cpp)
+  ${PROJECT_NAME} STATIC
+  src/vitis_algorithm.cpp src/cvt_color.cpp src/stereo.cpp src/feature_fast.cpp
+  src/logger.cpp src/cl_utils.cpp)
 
 target_include_directories(
   ${PROJECT_NAME}
@@ -32,15 +34,25 @@ if(DEFINED ROS_ACCELERATION AND DEFINED ROS_VITIS)
   target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC opencv_core
-    PRIVATE ${PROJECT_NAME}_kernels_cvt_color ${PROJECT_NAME}_kernels_stereo
-            spdlog::spdlog ${xrt_coreutil} ${xilinxopencl}
+    PRIVATE ${PROJECT_NAME}_kernels_cvt_color
+            ${PROJECT_NAME}_kernels_stereo
+            ${PROJECT_NAME}_kernels_feature
+            Boost::filesystem
+            spdlog::spdlog
+            ${xrt_coreutil}
+            ${xilinxopencl}
             vitis_common::vitis_common)
 else()
   target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC opencv_core
-    PRIVATE ${PROJECT_NAME}_kernels_cvt_color ${PROJECT_NAME}_kernels_stereo
-            spdlog::spdlog OpenCL::OpenCL vitis_common::vitis_common)
+    PRIVATE ${PROJECT_NAME}_kernels_cvt_color
+            ${PROJECT_NAME}_kernels_stereo
+            ${PROJECT_NAME}_kernels_feature
+            Boost::filesystem
+            spdlog::spdlog
+            OpenCL::OpenCL
+            vitis_common::vitis_common)
 endif()
 install(DIRECTORY include/ DESTINATION include)
 
