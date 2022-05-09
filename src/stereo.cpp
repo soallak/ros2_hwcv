@@ -205,9 +205,9 @@ class StereoImpl : public IStereoMatcher, public VitisAlgorithm {
       throw InvalidArgument(fmt::format("right image type is {} but must be {}",
                                         right_src.type(), CV_8UC1));
     }
-    if (dst.type() != CV_16UC1) {
-      throw InvalidArgument(fmt::format("dst image type is {} but must be {}",
-                                        dst.type(), CV_16UC1));
+    if (dst.elemSize() != 2) {
+      throw InvalidArgument(
+          fmt::format("dst image elemSize must be equal to 2"));
     }
   }
 

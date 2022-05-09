@@ -6,6 +6,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -Wno-unknown-pragmas)
 endif()
 
+find_package(ament_cmake REQUIRED)
 find_package(ament_vitis REQUIRED)
 find_package(vitis_common REQUIRED)
 find_package(OpenCV REQUIRED COMPONENTS core)
@@ -59,23 +60,16 @@ else()
   configure_file(cmake/config.in generated/cvt_color_config.hpp @ONLY)
 endif()
 
-add_library(${PROJECT_NAME} STATIC src/demosaicing_accel.cpp
+add_library(${PROJECT_NAME} SHARED src/demosaicing_accel.cpp
                                    src/bgr2gray_accel.cpp src/accel.cpp)
 target_include_directories(
   ${PROJECT_NAME}
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-         $<INSTALL_INTERFACE:include> src/
-         ${CMAKE_CURRENT_BINARY_DIR}/generated)
+         $<INSTALL_INTERFACE:include>
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated>)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC vitis_common::vitis_common_header)
+target_link_libraries(${PROJECT_NAME} PUBLIC opencv_core
+                                             vitis_common::vitis_common_header)
 
 install(DIRECTORY include/ DESTINATION include)
-
-install(
-  TARGETS ${PROJECT_NAME}
-  EXPORT ${PROJECT_NAME}Targets
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
-  INCLUDES
-  DESTINATION include)
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated/ DESTINATION include)
