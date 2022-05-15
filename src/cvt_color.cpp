@@ -10,6 +10,9 @@
 #include "utils.hpp"
 #include "vitis_algorithm.hpp"
 
+namespace demosaicing = hwcv::kernels::cvt_color::demosaicing;
+namespace bgr2gray = hwcv::kernels::cvt_color::bgr2gray;
+
 namespace hwcv {
 
 class CvtColorImpl : public VitisAlgorithm, public ICvtColor {
@@ -21,6 +24,7 @@ class CvtColorImpl : public VitisAlgorithm, public ICvtColor {
           FMT_STRING("Load binary file {} for device {} succeeded."),
           GetBinaryFile(), device_.getInfo<CL_DEVICE_NAME>()));
       LoadKernels();
+      SetupBuffers();
     } catch (CLError const &e) {
       logger_->error(fmt::format(FMT_STRING("Load binary file {} failed: {}"),
                                  GetBinaryFile(), e.what()));
@@ -43,13 +47,6 @@ class CvtColorImpl : public VitisAlgorithm, public ICvtColor {
                cv::ColorConversionCodes code) override {
     ValidateArguments(src, dst, code);
     if (is_binary_loaded_) {
-      logger_->debug("Create Buffers");
-      cl::Buffer buffer_src =
-          CreateBufferForCvMat(src, context_, CL_MEM_READ_ONLY);
-
-      cl::Buffer buffer_dst =
-          CreateBufferForCvMat(dst, context_, CL_MEM_WRITE_ONLY);
-
       int height = src.rows;
       int width = src.cols;
 
@@ -58,18 +55,19 @@ class CvtColorImpl : public VitisAlgorithm, public ICvtColor {
         logger_->debug("Setup bgr2gray_kernel arguments");
 
         kernel = bgr2gray_kernel_;
-        SetKernelArg(kernel, 0, buffer_src, buffer_dst, height, width);
+        SetKernelArg(kernel, 0, buffer_src_, buffer_dst_, height, width);
 
       } else {
         logger_->debug("Setup demosaicing_kernel arguments");
         kernel = demosaicing_kernel_;
         auto pattern = ToXfPattern(code);
-        SetKernelArg(kernel, 0, buffer_src, buffer_dst, height, width, pattern);
+        SetKernelArg(kernel, 0, buffer_src_, buffer_dst_, height, width,
+                     pattern);
       }
       logger_->debug("Write input buffers");
       cl_int err = 0;
       cl::Event event;
-      OCL_CALL(err = queue_.enqueueWriteBuffer(buffer_src, CL_TRUE, 0,
+      OCL_CALL(err = queue_.enqueueWriteBuffer(buffer_src_, CL_TRUE, 0,
                                                GetBufferSizeForCvMat(src),
                                                src.data, nullptr, &event),
                err);
@@ -78,13 +76,13 @@ class CvtColorImpl : public VitisAlgorithm, public ICvtColor {
       OCL_CALL(err = queue_.enqueueTask(kernel), err);
 
       logger_->debug("Read output buffers");
-      OCL_CALL(err = queue_.enqueueReadBuffer(buffer_dst, CL_TRUE, 0,
+      OCL_CALL(err = queue_.enqueueReadBuffer(buffer_dst_, CL_TRUE, 0,
                                               GetBufferSizeForCvMat(dst),
                                               dst.data, nullptr, &event),
                err);
 
       logger_->debug("Finish up queue");
-      OCL_CALL(err = queue_.finish(), err);
+      OCL_CALL(err = queue_.flush(), err);
     }
 
     else {
@@ -268,9 +266,28 @@ class CvtColorImpl : public VitisAlgorithm, public ICvtColor {
     }
   }
 
+  void SetupBuffers() {
+    logger_->debug("Create Buffers");
+    cl_int err(0);
+    OCL_CALL(buffer_src_ = cl::Buffer(context_, CL_MEM_READ_ONLY,
+                                      buffer_src_size_, NULL, &err),
+             err)
+    OCL_CALL(buffer_dst_ = cl::Buffer(context_, CL_MEM_WRITE_ONLY,
+                                      buffer_dst_size_, NULL, &err),
+             err)
+  }
+
  private:
   cl::Kernel demosaicing_kernel_;
   cl::Kernel bgr2gray_kernel_;
+  cl::Buffer buffer_dst_;
+  cl::Buffer buffer_src_;
+  const unsigned long max_width_ =
+      std::max(demosaicing::GetMaxWidth(), bgr2gray::GetMaxWidth());
+  const unsigned long max_height_ =
+      std::max(demosaicing::GetMaxHeight(), bgr2gray::GetMaxHeight());
+  const unsigned long buffer_dst_size_ = max_height_ * max_width_ * 3;
+  const unsigned long buffer_src_size_ = max_height_ * max_width_ * 4;
 };
 
 CvtColor::CvtColor() : impl_(std::make_unique<CvtColorImpl>()) {}

@@ -24,13 +24,17 @@ class IStereoMatcher {
 
   virtual void SetTextureThreshold(int val) = 0;
 
-  virtual int GetPreFilterCapSize() = 0;
+  virtual int GetPreFilterCapSize() const = 0;
 
-  virtual int GetMinDisparity() = 0;
+  virtual int GetMinDisparity() const = 0;
 
-  virtual int GetUniquenessRatio() = 0;
+  virtual int GetUniquenessRatio() const = 0;
 
-  virtual int GetTextureThreshold() = 0;
+  virtual int GetTextureThreshold() const = 0;
+
+  virtual int GetNumDisparities() const = 0;
+
+  virtual int GetAggregationWindowSize() const = 0;
 
   /**
    * @brief Destroy the IStereoMatcher object
@@ -65,13 +69,17 @@ class StereoMatcher : public IStereoMatcher {
 
   void SetTextureThreshold(int val) override;
 
-  int GetPreFilterCapSize() override;
+  int GetPreFilterCapSize() const override;
 
-  int GetMinDisparity() override;
+  int GetMinDisparity() const override;
 
-  int GetUniquenessRatio() override;
+  int GetUniquenessRatio() const override;
 
-  int GetTextureThreshold() override;
+  int GetTextureThreshold() const override;
+
+  int GetNumDisparities() const override;
+
+  int GetAggregationWindowSize() const override;
 
  private:
   std::unique_ptr<IStereoMatcher> impl_;

@@ -22,7 +22,7 @@ if(DEFINED ROS_ACCELERATION AND DEFINED ROS_VITIS)
   configure_file(cmake/stereo_lbm_config.in generated/stereo_lbm_config.hpp
                  @ONLY)
 
-  if(NOT NOKERNEL AND NOT NO_STEREO_KERNEL)
+  if(NOT NOKERNELS AND NOT NO_STEREO_KERNEL)
     set(SOURCE_DIR src/kernels/stereo/)
     message(WARNING "Compiling for FPGA. This might take a while")
 

@@ -6,6 +6,8 @@
 #include "utils.hpp"
 #include "vitis_algorithm.hpp"
 
+namespace fast = hwcv::kernels::feature::fast;
+
 namespace hwcv {
 
 class FastFeatureDetectorImpl : public IFastFeatureDetector, VitisAlgorithm {
@@ -17,6 +19,7 @@ class FastFeatureDetectorImpl : public IFastFeatureDetector, VitisAlgorithm {
           FMT_STRING("Load binary file {} for device {} succeeded."),
           GetBinaryFile(), device_.getInfo<CL_DEVICE_NAME>()));
       LoadKernel();
+      SetupBuffers();
     } catch (CLError const& e) {
       logger_->error(fmt::format(FMT_STRING("Load binary file {} failed: {}"),
                                  GetBinaryFile(), e.what()));
@@ -67,7 +70,6 @@ class FastFeatureDetectorImpl : public IFastFeatureDetector, VitisAlgorithm {
   }
 
   void ValidateArguments(cv::Mat const& mat) {
-    using namespace hwcv::kernels::feature;
     if (!IsValidSize<fast::GetMaxHeight(), fast::GetMaxWidth()>(mat)) {
       throw InvalidArgument(fmt::format(
           FMT_STRING("image size ({}, {}) exceeds the maximum size ({}, {})"),
@@ -86,23 +88,17 @@ class FastFeatureDetectorImpl : public IFastFeatureDetector, VitisAlgorithm {
 
   // TODO(soallak): Is it possible to factorize the HW Execution code ?
   void HWExecute(cv::Mat const& src, cv::Mat& dst) {
-    logger_->debug("Create Buffers");
-    cl::Buffer buffer_src =
-        CreateBufferForCvMat(src, context_, CL_MEM_READ_ONLY);
-
-    cl::Buffer buffer_dst =
-        CreateBufferForCvMat(dst, context_, CL_MEM_WRITE_ONLY);
-
     int height = src.rows;
     int width = src.cols;
 
     logger_->debug("Setup fast arguments");
-    SetKernelArg(kernel_, 0, buffer_src, buffer_dst, height, width, threshold_);
+    SetKernelArg(kernel_, 0, buffer_src_, buffer_dst_, height, width,
+                 threshold_);
 
     logger_->debug("Write input buffers");
     cl_int err = 0;
     cl::Event event;
-    OCL_CALL(err = queue_.enqueueWriteBuffer(buffer_src, CL_TRUE, 0,
+    OCL_CALL(err = queue_.enqueueWriteBuffer(buffer_src_, CL_TRUE, 0,
                                              GetBufferSizeForCvMat(src),
                                              src.data, nullptr, &event),
              err);
@@ -111,13 +107,13 @@ class FastFeatureDetectorImpl : public IFastFeatureDetector, VitisAlgorithm {
     OCL_CALL(err = queue_.enqueueTask(kernel_), err);
 
     logger_->debug("Read output buffers");
-    OCL_CALL(err = queue_.enqueueReadBuffer(buffer_dst, CL_TRUE, 0,
+    OCL_CALL(err = queue_.enqueueReadBuffer(buffer_dst_, CL_TRUE, 0,
                                             GetBufferSizeForCvMat(dst),
                                             dst.data, nullptr, &event),
              err);
 
     logger_->debug("Finish up queue");
-    OCL_CALL(err = queue_.finish(), err);
+    OCL_CALL(err = queue_.flush(), err);
   }
 
   void SWExecute(cv::Mat const& src, cv::Mat& dst) {
@@ -163,10 +159,27 @@ class FastFeatureDetectorImpl : public IFastFeatureDetector, VitisAlgorithm {
         });
   }
 
+  void SetupBuffers() {
+    logger_->debug("Create Buffers");
+    cl_int err(0);
+    OCL_CALL(buffer_src_ = cl::Buffer(context_, CL_MEM_READ_ONLY,
+                                      buffer_src_size_, NULL, &err),
+             err)
+    OCL_CALL(buffer_dst_ = cl::Buffer(context_, CL_MEM_WRITE_ONLY,
+                                      buffer_dst_size_, NULL, &err),
+             err)
+  }
+
  private:
   constexpr static int default_threshold_ = 20;
   int threshold_{default_threshold_};
   cl::Kernel kernel_;
+  cl::Buffer buffer_src_;
+  cl::Buffer buffer_dst_;
+  const unsigned int buffer_src_size_ =
+      fast::GetMaxHeight() * fast::GetMaxWidth();
+  const unsigned int buffer_dst_size_ =
+      fast::GetMaxHeight() * fast::GetMaxWidth();
 };
 
 FastFeatureDetector::FastFeatureDetector()

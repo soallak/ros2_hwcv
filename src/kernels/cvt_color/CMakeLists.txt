@@ -23,7 +23,7 @@ if(DEFINED ROS_ACCELERATION AND DEFINED ROS_VITIS)
 
   configure_file(cmake/config.in generated/cvt_color_config.hpp @ONLY)
 
-  if(NOT NOKERNEL AND NOT NO_CVT_COLOR_KERNEL)
+  if(NOT NOKERNELS AND NOT NO_CVT_COLOR_KERNEL)
     message(WARNING "Compiling for FPGA. This might take a while")
 
     set(SOURCE_DIR src/kernels/cvt_color/)

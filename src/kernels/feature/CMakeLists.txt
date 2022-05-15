@@ -21,7 +21,7 @@ if(DEFINED ROS_ACCELERATION AND DEFINED ROS_VITIS)
 
   configure_file(cmake/feature_config.in generated/feature_config.hpp @ONLY)
 
-  if(NOT NOKERNEL AND NOT NO_FEATURE_KERNEL)
+  if(NOT NOKERNELS AND NOT NO_FEATURE_KERNEL)
     message(WARNING "Compiling for FPGA. This might take a while")
 
     set(SOURCE_DIR src/kernels/feature/)

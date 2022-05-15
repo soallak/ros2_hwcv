@@ -1,4 +1,3 @@
-
 project(hwcv_kernels)
 
 # Make the finary file name known
@@ -9,6 +8,7 @@ if(DEFINED ROS_VITIS)
   set(HWCV_KERNELS_CFG_DIR "src/kernels/cfg/")
   set(HWCV_KERNELS_CFG ${HWCV_KERNELS_CFG_DIR}/kv260.cfg)
   set(HWCV_KERNELS_DTSI ${HWCV_KERNELS_CFG_DIR}/kv260.dtsi)
+  set(HWCV_KERNELS_SHELL ${HWCV_KERNELS_CFG_DIR}/kv260_shell.json)
 
 endif()
 
@@ -18,7 +18,7 @@ add_subdirectory(stereo)
 add_subdirectory(feature)
 
 # Link all kernels
-if(NOT NOKERNEL AND DEFINED ROS_VITIS)
+if(NOT NOKERNELS AND DEFINED ROS_VITIS)
   set(HWCV_KERNELS ${HWCV_KERNERLS_CVT_COLOR} ${HWCV_KERNERLS_STEREO}
                    ${HWCV_KERNERLS_FEATURE})
   message(WARNING "Linking kernels ${HWCV_KERNELS}. This might take a while")
@@ -30,6 +30,7 @@ if(NOT NOKERNEL AND DEFINED ROS_VITIS)
     CONFIG
     ${HWCV_KERNELS_CFG}
     DTSI
-    ${HWCV_KERNELS_DTSI})
-
+    ${HWCV_KERNELS_DTSI}
+    SHELLJSON
+    ${HWCV_KERNELS_SHELL})
 endif()

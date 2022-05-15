@@ -20,6 +20,7 @@ class StereoImpl : public IStereoMatcher, public VitisAlgorithm {
       logger_->info(fmt::format(
           FMT_STRING("Load binary file {} for device {} succeeded."),
           GetBinaryFile(), device_.getInfo<CL_DEVICE_NAME>()));
+      SetupBuffers();
       LoadKernel();
     } catch (CLError const &e) {
       logger_->error(fmt::format(FMT_STRING("Load binary file {} failed: {}"),
@@ -38,44 +39,37 @@ class StereoImpl : public IStereoMatcher, public VitisAlgorithm {
                cv::Mat &dst) override {
     ValidateArguments(left_src, right_src, dst);
     if (is_binary_loaded_) {
-      logger_->debug("Create Buffers");
-      cl::Buffer buffer_left_src =
-          CreateBufferForCvMat(left_src, context_, CL_MEM_READ_ONLY);
-      cl::Buffer buffer_right_src =
-          CreateBufferForCvMat(right_src, context_, CL_MEM_READ_ONLY);
-      cl::Buffer buffer_dst =
-          CreateBufferForCvMat(dst, context_, CL_MEM_WRITE_ONLY);
-
       int height = left_src.rows;
       int width = left_src.cols;
 
       logger_->debug("Setup kernel arguments");
-      SetKernelArg(kernel_, 0, buffer_left_src, buffer_right_src, buffer_dst,
+      SetKernelArg(kernel_, 0, buffer_left_src_, buffer_right_src_, buffer_dst_,
                    height, width, pre_filter_cap_, min_disparity_,
                    uniqueness_ratio_, texture_threshold_);
 
       logger_->debug("Write input buffers");
       cl_int err = 0;
-      OCL_CALL(err = queue_.enqueueWriteBuffer(buffer_left_src, CL_TRUE, 0,
+      OCL_CALL(err = queue_.enqueueWriteBuffer(buffer_left_src_, CL_FALSE, 0,
                                                GetBufferSizeForCvMat(left_src),
                                                left_src.data),
                err);
-      OCL_CALL(err = queue_.enqueueWriteBuffer(buffer_right_src, CL_TRUE, 0,
+      OCL_CALL(err = queue_.enqueueWriteBuffer(buffer_right_src_, CL_FALSE, 0,
                                                GetBufferSizeForCvMat(right_src),
                                                right_src.data),
                err);
+      queue_.flush();
 
       logger_->debug("Execute stereo kernel");
       OCL_CALL(err = queue_.enqueueTask(kernel_), err);
 
       logger_->debug("Read output buffers");
       OCL_CALL(
-          err = queue_.enqueueReadBuffer(buffer_dst, CL_TRUE, 0,
+          err = queue_.enqueueReadBuffer(buffer_dst_, CL_TRUE, 0,
                                          GetBufferSizeForCvMat(dst), dst.data),
           err);
 
       logger_->debug("Finish up queue");
-      OCL_CALL(err = queue_.finish(), err);
+      OCL_CALL(err = queue_.flush(), err);
 
     } else {
       logger_->warn(fmt::format(
@@ -154,13 +148,19 @@ class StereoImpl : public IStereoMatcher, public VitisAlgorithm {
     }
   }
 
-  inline int GetPreFilterCapSize() override { return pre_filter_cap_; }
+  inline int GetPreFilterCapSize() const override { return pre_filter_cap_; }
 
-  inline int GetMinDisparity() override { return min_disparity_; }
+  inline int GetMinDisparity() const override { return min_disparity_; }
 
-  inline int GetUniquenessRatio() override { return uniqueness_ratio_; }
+  inline int GetUniquenessRatio() const override { return uniqueness_ratio_; }
 
-  inline int GetTextureThreshold() override { return texture_threshold_; }
+  inline int GetTextureThreshold() const override { return texture_threshold_; }
+
+  inline int GetNumDisparities() const override { return XF_STEREO_LBM_NDISP; }
+
+  inline int GetAggregationWindowSize() const override {
+    return XF_STEREO_LBM_WSIZE;
+  }
 
   std::string GetBinaryFile() override {
     return hwcv::kernels::stereo::GetBinaryFile();
@@ -218,6 +218,19 @@ class StereoImpl : public IStereoMatcher, public VitisAlgorithm {
     OCL_CALL(kernel_ = cl::Kernel(program_, kernel_name.c_str(), &err), err);
   }
 
+  void SetupBuffers() {
+    cl_int err(0);
+    OCL_CALL(buffer_left_src_ = cl::Buffer(context_, CL_MEM_READ_ONLY,
+                                           buffer_left_src_size_, NULL, &err),
+             err)
+    OCL_CALL(buffer_right_src_ = cl::Buffer(context_, CL_MEM_READ_ONLY,
+                                            buffer_right_src_size_, NULL, &err),
+             err)
+    OCL_CALL(buffer_dst_ = cl::Buffer(context_, CL_MEM_WRITE_ONLY,
+                                      buffer_dst_size_, NULL, &err),
+             err)
+  }
+
  private:
   // TODO(soallak) define consts for these defaults
   int pre_filter_cap_{31};
@@ -225,6 +238,13 @@ class StereoImpl : public IStereoMatcher, public VitisAlgorithm {
   int uniqueness_ratio_{15};
   int texture_threshold_{10};
   cl::Kernel kernel_;
+  cl::Buffer buffer_left_src_;
+  cl::Buffer buffer_right_src_;
+  cl::Buffer buffer_dst_;
+
+  const unsigned long buffer_left_src_size_ = XF_WIDTH * XF_HEIGHT;
+  const unsigned long buffer_right_src_size_ = XF_WIDTH * XF_HEIGHT;
+  const unsigned long buffer_dst_size_ = 2 * XF_WIDTH * XF_WIDTH;
 };
 
 StereoMatcher::StereoMatcher() : impl_(std::make_unique<StereoImpl>()) {}
@@ -248,18 +268,28 @@ void StereoMatcher::SetTextureThreshold(int val) {
   impl_->SetTextureThreshold(val);
 }
 
-inline int StereoMatcher::GetPreFilterCapSize() {
+inline int StereoMatcher::GetPreFilterCapSize() const {
   return impl_->GetPreFilterCapSize();
 }
 
-inline int StereoMatcher::GetMinDisparity() { return impl_->GetMinDisparity(); }
+inline int StereoMatcher::GetMinDisparity() const {
+  return impl_->GetMinDisparity();
+}
 
-inline int StereoMatcher::GetUniquenessRatio() {
+inline int StereoMatcher::GetUniquenessRatio() const {
   return impl_->GetUniquenessRatio();
 }
 
-inline int StereoMatcher::GetTextureThreshold() {
+inline int StereoMatcher::GetTextureThreshold() const {
   return impl_->GetTextureThreshold();
+}
+
+inline int StereoMatcher::GetAggregationWindowSize() const {
+  return impl_->GetAggregationWindowSize();
+}
+
+inline int StereoMatcher::GetNumDisparities() const {
+  return impl_->GetNumDisparities();
 }
 
 }  // namespace hwcv
