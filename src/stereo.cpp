@@ -15,16 +15,20 @@ namespace hwcv {
 class StereoImpl : public IStereoMatcher, public VitisAlgorithm {
  public:
   StereoImpl() {
-    try {
-      LoadBinaryFile();
-      logger_->info(fmt::format(
-          FMT_STRING("Load binary file {} for device {} succeeded."),
-          GetBinaryFile(), device_.getInfo<CL_DEVICE_NAME>()));
-      SetupBuffers();
-      LoadKernel();
-    } catch (CLError const &e) {
-      logger_->error(fmt::format(FMT_STRING("Load binary file {} failed: {}"),
-                                 GetBinaryFile(), e.what()));
+    if (!GetBinaryFile().empty()) {
+      try {
+        LoadBinaryFile();
+        logger_->info(fmt::format(
+            FMT_STRING("Load binary file {} for device {} succeeded."),
+            GetBinaryFile(), device_.getInfo<CL_DEVICE_NAME>()));
+        SetupBuffers();
+        LoadKernel();
+      } catch (CLError const &e) {
+        logger_->error(fmt::format(FMT_STRING("Load binary file {} failed: {}"),
+                                   GetBinaryFile(), e.what()));
+        is_binary_loaded_ = false;
+      }
+    } else {
       is_binary_loaded_ = false;
     }
   }
@@ -232,19 +236,23 @@ class StereoImpl : public IStereoMatcher, public VitisAlgorithm {
   }
 
  private:
-  // TODO(soallak) define consts for these defaults
-  int pre_filter_cap_{31};
-  int min_disparity_{0};
-  int uniqueness_ratio_{15};
-  int texture_threshold_{10};
+  int pre_filter_cap_{pre_filter_cap_default_};
+  int min_disparity_{min_disparity_default_};
+  int uniqueness_ratio_{uniqueness_ratio_default_};
+  int texture_threshold_{texture_threshold_default_};
   cl::Kernel kernel_;
   cl::Buffer buffer_left_src_;
   cl::Buffer buffer_right_src_;
   cl::Buffer buffer_dst_;
 
-  const unsigned long buffer_left_src_size_ = XF_WIDTH * XF_HEIGHT;
-  const unsigned long buffer_right_src_size_ = XF_WIDTH * XF_HEIGHT;
-  const unsigned long buffer_dst_size_ = 2 * XF_WIDTH * XF_WIDTH;
+  static constexpr int pre_filter_cap_default_{31};
+  static constexpr int min_disparity_default_{0};
+  static constexpr int uniqueness_ratio_default_{15};
+  static constexpr int texture_threshold_default_{10};
+
+  const uint64_t buffer_left_src_size_ = XF_WIDTH * XF_HEIGHT;
+  const uint64_t buffer_right_src_size_ = XF_WIDTH * XF_HEIGHT;
+  const uint64_t buffer_dst_size_ = 2 * XF_WIDTH * XF_WIDTH;
 };
 
 StereoMatcher::StereoMatcher() : impl_(std::make_unique<StereoImpl>()) {}

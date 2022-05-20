@@ -14,8 +14,7 @@ VitisAlgorithm::VitisAlgorithm() : logger_(GetLogger()) {}
 
 VitisAlgorithm::~VitisAlgorithm() {
   queue_.finish();
-  // TODO(soallak): delete file buffer
-  // if (binary_file_buf_) delete[] binary_file_buf_;
+  if (binary_file_buf_) delete[] binary_file_buf_;
 }
 
 void VitisAlgorithm::LoadBinaryFile() {
