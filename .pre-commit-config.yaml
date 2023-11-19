@@ -1,0 +1,33 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+exclude: cpp/.idea/
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+# Tex
+-   repo: https://github.com/jonasbb/pre-commit-latex-hooks
+    rev: v1.3.0
+    hooks:
+      - id: unique-labels
+-   repo: https://github.com/cmhughes/latexindent.pl.git
+    rev: V3.18
+    hooks:
+      - id: latexindent
+# Cpp
+-   repo: https://github.com/pocc/pre-commit-hooks
+    rev: v1.3.5
+    hooks:
+      - id: clang-format
+        args: [-i, -fallback-style=none]
+      #- id: clang-tidy
+      #- id: oclint
+      #- id: cppcheck
+      #- id: include-what-you-use
+-   repo: https://github.com/cheshirekow/cmake-format-precommit
+    rev: v0.6.13
+    hooks:
+    - id: cmake-format
+      additional_dependencies: [pyyaml]

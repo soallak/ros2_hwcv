@@ -2,6 +2,7 @@
 
 #include <opencv2/core.hpp>
 #include <opencv2/core/types.hpp>
+#include <memory>
 
 namespace hwcv {
 
